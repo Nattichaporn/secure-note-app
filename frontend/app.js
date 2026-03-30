@@ -1,5 +1,5 @@
 // เปลี่ยน API URL ไปใช้ของ PocketHost ตามที่อาจารย์กำหนด
-const API_URL = 'https://app-tracking.pockethost.io/api/collections/notes/records';
+const API_URL = 'https://secure-note-app-two.vercel.app/api/notes';
 // ใส่ Token ตามที่อาจารย์ให้มา
 const SECRET_TOKEN = 'Bearer 20260301eink';
 
