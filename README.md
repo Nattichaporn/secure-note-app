@@ -18,7 +18,7 @@ A simple, fast, and responsive web application for managing your daily notes. Th
 ## 🚀 Live Demo (Production)
 The frontend application has been deployed on Vercel and is connected to the PocketHost Cloud API. No installation is required to view the live version.
 
-**Live Link:** [ใส่ลิงก์ Vercel ของหนูที่นี่ เช่น https://my-quick-notes.vercel.app]
+**Live Link:** https://secure-note-app-two.vercel.app/
 
 ---
 
