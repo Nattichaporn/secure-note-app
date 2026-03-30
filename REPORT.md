@@ -1,12 +1,12 @@
-# รายงานการวิเคราะห์เชิงแนวคิดและการพัฒนาแอปพลิเคชัน SecureNote (ฉบับสมบูรณ์)
+# การวิเคราะห์เชิงแนวคิดและการพัฒนาแอปพลิเคชัน SecureNote
 
-## 1. การทำงานของ JavaScript Engine และ Runtime Environment
+## 1. JavaScript Engine และ Runtime Environment
 ในโปรเจกต์นี้ เราได้ประยุกต์ใช้ JavaScript ในสองบริบทที่แตกต่างกัน ซึ่งสะท้อนถึงโครงสร้างพื้นฐานของ Web Development:
 
 * **Frontend (Browser Runtime):** โค้ดในไฟล์ `app.js` ถูกประมวลผลบนเว็บเบราว์เซอร์ ซึ่งทำหน้าที่เป็น **Runtime Environment** เบราว์เซอร์ไม่ได้เพียงแค่รัน JavaScript เท่านั้น แต่ยังเตรียม **Web APIs** ที่สำคัญ เช่น **Fetch API** สำหรับการสื่อสารข้ามเครือข่าย และ **DOM API** สำหรับการควบคุมหน้าจอ โดยมี **JavaScript Engine** (เช่น V8 ใน Chrome หรือ SpiderMonkey ใน Firefox) ทำหน้าที่แปลงโค้ดจากภาษาระดับสูงให้กลายเป็นภาษาเครื่อง (Machine Code) เพื่อให้คอมพิวเตอร์ประมวลผลได้ทันที
 * **Backend (Node.js Runtime):** ในทางตรงกันข้าม ไฟล์ `server.js` ทำงานบน **Node.js** ซึ่งเป็นสภาพแวดล้อมที่นำ Engine V8 ออกมาทำงานนอกเบราว์เซอร์ สิ่งที่ทำให้ Node.js ต่างออกไปคือการเข้าถึงทรัพยากรเครื่องได้โดยตรง เช่น **File System (fs)** เพื่อบันทึกข้อมูลลงในไฟล์ `data.json` และการสร้าง **HTTP Server** เพื่อจัดการวงจรคำขอจากผู้ใช้ ซึ่งเป็นสิ่งที่ JavaScript บนเบราว์เซอร์ไม่สามารถทำได้เพื่อความปลอดภัยของผู้ใช้
 
-## 2. การจัดการหน้าเว็บด้วย Document Object Model (DOM)
+## 2. Document Object Model (DOM)
 แอปพลิเคชันนี้แสดงถึงพลังของ **Vanilla JavaScript** ในการควบคุมการแสดงผลโดยไม่ผ่าน Framework:
 
 * **DOM Tree Manipulation:** เมื่อเบราว์เซอร์โหลดไฟล์ HTML มันจะสร้างโครงสร้างข้อมูลแบบต้นไม้ (Tree Structure) ที่เรียกว่า **DOM** เราใช้ JavaScript เข้าไปจัดการโหนด (Nodes) ต่างๆ ผ่านคำสั่ง `document.getElementById()` เพื่อดึงธาตุ (Elements) ที่ต้องการมาควบคุม
@@ -18,7 +18,7 @@
 * **The Request/Response Cycle:** ทุกการกระทำของผู้ใช้ (เช่น การกดปุ่ม Save) จะเริ่มต้น **Request** ผ่าน Fetch API โดย Request นี้จะประกอบด้วย **Method** (GET, POST, PATCH, DELETE), **URL**, และ **Headers** เมื่อ Server (PocketHost) ได้รับคำขอ จะทำการประมวลผลและส่ง **Response** กลับมาพร้อมกับ **Status Code** (เช่น `200 OK` หรือ `201 Created`)
 * **Data Integrity & Security (HTTPS):** เนื่องด้วยโปรเจกต์นี้ถูก Deploy บนระบบ Cloud ของ Vercel ข้อมูลทั้งหมดจึงถูกส่งผ่านโปรโตคอล **HTTPS** ซึ่งมีการเข้ารหัสข้อมูล (Encryption) ตั้งแต่ต้นทางถึงปลายทาง หากไม่มี HTTPS ข้อมูลที่ละเอียดอ่อนอย่าง **Authorization Token** หรือเนื้อหาในโน้ตที่ผู้ใช้พิมพ์ อาจถูกดักจับและอ่านค่าได้โดยผู้ไม่หวังดีในระบบเครือข่ายเดียวกัน (Man-in-the-Middle Attack)
 
-## 4. กลยุทธ์การจัดการ Environment Variables และความปลอดภัยของข้อมูลลับ
+## 4. Environment Variables และความปลอดภัยของข้อมูลลับ
 เรามีการออกแบบการจัดเก็บความลับ (Secrets) โดยคำนึงถึงระดับความปลอดภัยและความสะดวกในการพัฒนา:
 
 * **Backend-Side Security:** ในระบบหลังบ้าน (Node.js) เราใช้ไฟล์ **`.env`** ร่วมกับโมดูล `dotenv` เพื่อเก็บค่า `SECRET_TOKEN` และใช้ไฟล์ **`.gitignore`** เพื่อป้องกันไม่ให้ข้อมูลเหล่านี้หลุดออกไปยัง GitHub Public Repository นี่เป็นวิธีการที่ถูกต้องในการรักษาความปลอดภัยของระบบเซิร์ฟเวอร์
