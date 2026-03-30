@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const fs = require('fs');
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
@@ -8,49 +10,83 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
 const SECRET_TOKEN = process.env.SECRET_TOKEN;
+const DATA_FILE = path.join(__dirname, 'data.json');
 
-// สร้างตัวแปรเก็บข้อมูล (Data Persistence ในหน่วยความจำชั่วคราว)
-let notes = [];
+// ฟังก์ชันอ่าน/เขียนไฟล์ (Bonus: Data Persistence)
+const readNotes = () => {
+  try {
+    if (!fs.existsSync(DATA_FILE)) {
+      fs.writeFileSync(DATA_FILE, JSON.stringify([]));
+    }
+    const data = fs.readFileSync(DATA_FILE, 'utf8');
+    return JSON.parse(data);
+  } catch (err) {
+    console.error("Error reading file:", err);
+    return [];
+  }
+};
 
-// Middleware ตรวจสอบ Authorization Header
+const writeNotes = (notes) => {
+  try {
+    fs.writeFileSync(DATA_FILE, JSON.stringify(notes, null, 2));
+  } catch (err) {
+    console.error("Error writing file:", err);
+  }
+};
+
+// Middleware ตรวจสอบ Token
 const authenticate = (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || authHeader !== SECRET_TOKEN) {
-    return res.status(401).json({ error: 'Unauthorized' }); // ส่ง Status 401 หากรหัสผิด [cite: 30]
+    return res.status(401).json({ error: 'Unauthorized' });
   }
   next();
 };
 
-// 1. GET /api/notes: คืนค่า Note ทั้งหมด (ไม่ต้องใช้ Token ตามโจทย์) [cite: 27]
+// 1. GET /api/notes
 app.get('/api/notes', (req, res) => {
+  const notes = readNotes();
   res.status(200).json(notes);
 });
 
-// 2. POST /api/notes: สร้าง Note ใหม่ (ต้องใช้ Token) [cite: 28]
+// 2. POST /api/notes
 app.post('/api/notes', authenticate, (req, res) => {
   const { title, content } = req.body;
+
+  // --- Bonus 3: Input Validation (5 pts) ---
+  // เช็คว่าถ้าไม่มี title, ไม่มี content หรือส่งมาเป็นแค่ช่องว่าง (Spacebar) ให้เด้ง 400
+  if (!title || !title.trim() || !content || !content.trim()) {
+    return res.status(400).json({ error: 'Bad Request: Title and content are required' });
+  }
+  // -----------------------------------------
+
   const newNote = {
     id: Date.now().toString(),
     title,
     content
   };
+  
+  const notes = readNotes();
   notes.unshift(newNote);
-  res.status(201).json(newNote); // ส่ง Status 201 Created [cite: 30]
+  writeNotes(notes);
+  
+  res.status(201).json(newNote);
 });
 
-// 3. DELETE /api/notes/:id: ลบ Note (ต้องใช้ Token) [cite: 29]
+// 3. DELETE /api/notes/:id
 app.delete('/api/notes/:id', authenticate, (req, res) => {
-  const { id } = req.params;
-  const noteIndex = notes.findIndex(note => note.id === id);
+  let notes = readNotes();
+  const initialLength = notes.length;
+  notes = notes.filter(note => note.id !== req.params.id);
   
-  if (noteIndex === -1) {
-    return res.status(404).json({ error: 'Note not found' }); // ส่ง Status 404 Not Found [cite: 30]
+  if (notes.length === initialLength) {
+    return res.status(404).json({ error: 'Note not found' });
   }
-  
-  notes.splice(noteIndex, 1);
-  res.status(200).json({ message: 'Note deleted successfully' });
+
+  writeNotes(notes);
+  res.status(200).json({ message: 'Deleted successfully' });
 });
 
 app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+  console.log(`Server is running on port ${PORT}`);
 });

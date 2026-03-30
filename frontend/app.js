@@ -1,14 +1,22 @@
-const API_URL = 'http://localhost:3000/api/notes';
-const SECRET_TOKEN = 'mysecret123';
+// เปลี่ยน API URL ไปใช้ของ PocketHost ตามที่อาจารย์กำหนด
+const API_URL = 'https://app-tracking.pockethost.io/api/collections/notes/records';
+// ใส่ Token ตามที่อาจารย์ให้มา
+const SECRET_TOKEN = 'Bearer 20260301eink';
 
 let notes = []
 let editingNoteId = null
 
+// List/Search: GET
 async function loadNotes() {
   try {
-    const response = await fetch(API_URL);
+    const response = await fetch(API_URL, {
+      method: 'GET',
+      headers: { 'Authorization': SECRET_TOKEN }
+    });
     if (response.ok) {
-      notes = await response.json();
+      const data = await response.json();
+      // PocketHost จะส่งข้อมูลกลับมาในรูปแบบ { items: [...] } เราเลยต้องดึง data.items มาใช้
+      notes = data.items || []; 
       renderNotes();
     }
   } catch (error) {
@@ -21,33 +29,36 @@ async function saveNote(event) {
 
   const title = document.getElementById('noteTitle').value.trim();
   const content = document.getElementById('noteContent').value.trim();
+  
+  // จัดรูปแบบข้อมูลตามที่อาจารย์ใบ้มา (มี user_id: 2 ด้วย)
+  const payload = JSON.stringify({ 
+    title: title, 
+    content: content, 
+    user_id: 2 
+  });
 
   if(editingNoteId) {
-    // Update existing Note (ลบของเก่าทิ้ง แล้วสร้างอันใหม่แทน เพื่อหลบข้อจำกัด Backend)
+    // Update: PATCH (เปลี่ยนจาก DELETE+POST ของเดิม เป็น PATCH ตามที่อาจารย์ระบุ)
     await fetch(`${API_URL}/${editingNoteId}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': SECRET_TOKEN }
-    });
-
-    await fetch(API_URL, {
-      method: 'POST',
+      method: 'PATCH',
       headers: { 'Content-Type': 'application/json', 'Authorization': SECRET_TOKEN },
-      body: JSON.stringify({ title, content })
+      body: payload
     });
 
   } else {
-    // Add New Note
+    // Create: POST
     await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': SECRET_TOKEN },
-      body: JSON.stringify({ title, content })
+      body: payload
     });
   }
 
   closeNoteDialog()
-  await loadNotes()
+  await loadNotes() // โหลดข้อมูลใหม่จาก PocketHost ทันที
 }
 
+// Delete: DELETE
 async function deleteNote(noteId) {
   try {
     const response = await fetch(`${API_URL}/${noteId}`, {
@@ -55,7 +66,7 @@ async function deleteNote(noteId) {
       headers: { 'Authorization': SECRET_TOKEN }
     });
     if (response.ok) {
-      await loadNotes();
+      await loadNotes(); // โหลดข้อมูลใหม่จาก PocketHost ทันที
     }
   } catch (error) {
     console.error("Error deleting note:", error);
@@ -66,7 +77,6 @@ function renderNotes() {
   const notesContainer = document.getElementById('notesContainer');
 
   if(notes.length === 0) {
-    // show some fall back elements
     notesContainer.innerHTML = `
       <div class="empty-state">
         <h2>No notes yet</h2>
@@ -121,7 +131,6 @@ function openNoteDialog(noteId = null) {
 
   dialog.showModal()
   titleInput.focus()
-
 }
 
 function closeNoteDialog() {
